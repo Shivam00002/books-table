@@ -11,8 +11,15 @@ interface Book {
 
 const BookManagementApp: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number>(-1);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [newBook, setNewBook] = useState<Omit<Book, 'sno'>>({
+    booktitle: '',
+    author: '',
+    genre: '',
+    yop: '',
+    isbn: '',
+  });
+  const [editedBook, setEditedBook] = useState<Omit<Book, 'sno'>>({
     booktitle: '',
     author: '',
     genre: '',
@@ -21,27 +28,35 @@ const BookManagementApp: React.FC = () => {
   });
 
   const addBook = () => {
-    if (editingIndex === -1) {
+    if (!isAddDisabled) {
       setBooks([...books, { ...newBook, sno: books.length + 1 }]);
-    } else {
-      const updatedBooks = [...books];
-      updatedBooks[editingIndex] = { ...newBook, sno: editingIndex + 1 };
-      setBooks(updatedBooks);
-      setEditingIndex(-1);
+      setNewBook({ booktitle: '', author: '', genre: '', yop: '', isbn: '' });
     }
-    setNewBook({ booktitle: '', author: '', genre: '', yop: '', isbn: '' });
   };
 
   const editBook = (index: number) => {
     setEditingIndex(index);
-    setNewBook(books[index]);
+    setEditedBook(books[index]); // Set the book being edited
   };
 
-  const updateBook = (index: number) => {
-    const updatedBooks = [...books];
-    updatedBooks[index] = { ...newBook, sno: index + 1 };
-    setBooks(updatedBooks);
-    setEditingIndex(-1);
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof Omit<Book, 'sno'>
+  ) => {
+    setEditedBook({ ...editedBook, [field]: e.target.value });
+  };
+
+  const saveEdit = () => {
+    if (editingIndex !== null) {
+      const updatedBooks = [...books];
+      updatedBooks[editingIndex] = { ...editedBook, sno: editingIndex + 1 };
+      setBooks(updatedBooks);
+      setEditingIndex(null);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
   };
 
   const deleteBook = (index: number) => {
@@ -49,12 +64,15 @@ const BookManagementApp: React.FC = () => {
     setBooks(updatedBooks.map((book, i) => ({ ...book, sno: i + 1 })));
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof Omit<Book, 'sno'>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof Omit<Book, 'sno'>
+  ) => {
     setNewBook({ ...newBook, [field]: e.target.value });
   };
 
-  // Check if any field is empty to disable Add/Update button
-  const isAddDisabled = Object.values(newBook).some((value) => typeof value === 'string' && value.trim() === '');
+  // Check if any field is empty to disable Add Book button
+  const isAddDisabled = Object.values(newBook).some((value) => value.trim() === '');
 
   return (
     <div className="container mx-auto p-4">
@@ -62,7 +80,7 @@ const BookManagementApp: React.FC = () => {
 
       {/* New book form */}
       <div className="bg-gray-100 p-4 rounded-lg mb-4">
-        <h2 className="text-lg font-bold mb-2">{editingIndex === -1 ? 'Add New Book' : 'Edit Book'}</h2>
+        <h2 className="text-lg font-bold mb-2">Add New Book</h2>
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 mb-4">
           <input
             type="text"
@@ -100,17 +118,17 @@ const BookManagementApp: React.FC = () => {
             className="border p-2 rounded w-full"
           />
         </div>
-        <button 
-          onClick={addBook} 
+        <button
+          onClick={addBook}
+          className={`bg-blue-500 text-white p-2 rounded ${isAddDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           disabled={isAddDisabled}
-          className={`p-2 rounded flex items-center ${isAddDisabled ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
         >
-          {editingIndex === -1 ? '➕ Add Book' : '✔️ Update Book'}
+          ➕ Add Book
         </button>
       </div>
 
-      {/* Desktop view */}
-      <div className="hidden md:block overflow-x-auto">
+      {/* Book list */}
+      <div className="overflow-x-auto">
         <table className="w-full mb-4">
           <thead>
             <tr className="bg-gray-100">
@@ -127,60 +145,58 @@ const BookManagementApp: React.FC = () => {
             {books.map((book, index) => (
               <tr key={book.sno} className="border-b">
                 {editingIndex === index ? (
-                  // Editable row
                   <>
                     <td className="p-2">{book.sno}</td>
                     <td className="p-2">
                       <input
                         type="text"
-                        value={newBook.booktitle}
-                        onChange={(e) => handleInputChange(e, 'booktitle')}
+                        value={editedBook.booktitle}
+                        onChange={(e) => handleEditChange(e, 'booktitle')}
                         className="border p-2 rounded w-full"
                       />
                     </td>
                     <td className="p-2">
                       <input
                         type="text"
-                        value={newBook.author}
-                        onChange={(e) => handleInputChange(e, 'author')}
+                        value={editedBook.author}
+                        onChange={(e) => handleEditChange(e, 'author')}
                         className="border p-2 rounded w-full"
                       />
                     </td>
                     <td className="p-2">
                       <input
                         type="text"
-                        value={newBook.genre}
-                        onChange={(e) => handleInputChange(e, 'genre')}
+                        value={editedBook.genre}
+                        onChange={(e) => handleEditChange(e, 'genre')}
                         className="border p-2 rounded w-full"
                       />
                     </td>
                     <td className="p-2">
                       <input
                         type="text"
-                        value={newBook.yop}
-                        onChange={(e) => handleInputChange(e, 'yop')}
+                        value={editedBook.yop}
+                        onChange={(e) => handleEditChange(e, 'yop')}
                         className="border p-2 rounded w-full"
                       />
                     </td>
                     <td className="p-2">
                       <input
                         type="text"
-                        value={newBook.isbn}
-                        onChange={(e) => handleInputChange(e, 'isbn')}
+                        value={editedBook.isbn}
+                        onChange={(e) => handleEditChange(e, 'isbn')}
                         className="border p-2 rounded w-full"
                       />
                     </td>
                     <td className="p-2">
-                      <button onClick={() => updateBook(index)} className="mr-2 text-green-500">
-                        ✔️ Save
+                      <button onClick={saveEdit} className="mr-2 text-green-500">
+                        💾 Save
                       </button>
-                      <button onClick={() => setEditingIndex(-1)} className="text-red-500">
-                        ✖️ Cancel
+                      <button onClick={cancelEdit} className="text-yellow-500">
+                        ❌ Cancel
                       </button>
                     </td>
                   </>
                 ) : (
-                  // View-only row
                   <>
                     <td className="p-2">{book.sno}</td>
                     <td className="p-2">{book.booktitle}</td>
