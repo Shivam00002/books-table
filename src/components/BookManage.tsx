@@ -10,9 +10,6 @@ interface Book {
 }
 
 const BookManagementApp: React.FC = () => {
-  const [name, setName] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
   const [books, setBooks] = useState<Book[]>([]);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [newBook, setNewBook] = useState<Omit<Book, 'sno'>>({
@@ -40,6 +37,13 @@ const BookManagementApp: React.FC = () => {
     setNewBook(books[index]);
   };
 
+  const updateBook = (index: number) => {
+    const updatedBooks = [...books];
+    updatedBooks[index] = { ...newBook, sno: index + 1 };
+    setBooks(updatedBooks);
+    setEditingIndex(-1);
+  };
+
   const deleteBook = (index: number) => {
     const updatedBooks = books.filter((_, i) => i !== index);
     setBooks(updatedBooks.map((book, i) => ({ ...book, sno: i + 1 })));
@@ -49,60 +53,12 @@ const BookManagementApp: React.FC = () => {
     setNewBook({ ...newBook, [field]: e.target.value });
   };
 
-
+  // Check if any field is empty to disable Add/Update button
+  const isAddDisabled = Object.values(newBook).some((value) => typeof value === 'string' && value.trim() === '');
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Book Management App</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <input
-          type="tel"
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-      </div>
-
-      {/* Mobile view */}
-      <div className="md:hidden">
-        {books.map((book, index) => (
-          <div key={book.sno} className="bg-white shadow rounded-lg p-4 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-bold">#{book.sno}</span>
-              <div>
-                <button onClick={() => editBook(index)} className="mr-2 text-blue-500">
-                  ✏️
-                </button>
-                <button onClick={() => deleteBook(index)} className="text-red-500">
-                  🗑️
-                </button>
-              </div>
-            </div>
-            <p><strong>Title:</strong> {book.booktitle}</p>
-            <p><strong>Author:</strong> {book.author}</p>
-            <p><strong>Genre:</strong> {book.genre}</p>
-            <p><strong>Year:</strong> {book.yop}</p>
-            <p><strong>ISBN:</strong> {book.isbn}</p>
-          </div>
-        ))}
-      </div>
-
-
 
       {/* New book form */}
       <div className="bg-gray-100 p-4 rounded-lg mb-4">
@@ -146,13 +102,12 @@ const BookManagementApp: React.FC = () => {
         </div>
         <button 
           onClick={addBook} 
-          className="bg-blue-500 text-white p-2 rounded flex items-center"
+          disabled={isAddDisabled}
+          className={`p-2 rounded flex items-center ${isAddDisabled ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
         >
           {editingIndex === -1 ? '➕ Add Book' : '✔️ Update Book'}
         </button>
       </div>
-
-
 
       {/* Desktop view */}
       <div className="hidden md:block overflow-x-auto">
@@ -171,28 +126,83 @@ const BookManagementApp: React.FC = () => {
           <tbody>
             {books.map((book, index) => (
               <tr key={book.sno} className="border-b">
-                <td className="p-2">{book.sno}</td>
-                <td className="p-2">{book.booktitle}</td>
-                <td className="p-2">{book.author}</td>
-                <td className="p-2">{book.genre}</td>
-                <td className="p-2">{book.yop}</td>
-                <td className="p-2">{book.isbn}</td>
-                <td className="p-2">
-                  <button onClick={() => editBook(index)} className="mr-2 text-blue-500">
-                    ✏️
-                  </button>
-                  <button onClick={() => deleteBook(index)} className="text-red-500">
-                    🗑️
-                  </button>
-                </td>
+                {editingIndex === index ? (
+                  // Editable row
+                  <>
+                    <td className="p-2">{book.sno}</td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={newBook.booktitle}
+                        onChange={(e) => handleInputChange(e, 'booktitle')}
+                        className="border p-2 rounded w-full"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={newBook.author}
+                        onChange={(e) => handleInputChange(e, 'author')}
+                        className="border p-2 rounded w-full"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={newBook.genre}
+                        onChange={(e) => handleInputChange(e, 'genre')}
+                        className="border p-2 rounded w-full"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={newBook.yop}
+                        onChange={(e) => handleInputChange(e, 'yop')}
+                        className="border p-2 rounded w-full"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={newBook.isbn}
+                        onChange={(e) => handleInputChange(e, 'isbn')}
+                        className="border p-2 rounded w-full"
+                      />
+                    </td>
+                    <td className="p-2">
+                      <button onClick={() => updateBook(index)} className="mr-2 text-green-500">
+                        ✔️ Save
+                      </button>
+                      <button onClick={() => setEditingIndex(-1)} className="text-red-500">
+                        ✖️ Cancel
+                      </button>
+                    </td>
+                  </>
+                ) : (
+                  // View-only row
+                  <>
+                    <td className="p-2">{book.sno}</td>
+                    <td className="p-2">{book.booktitle}</td>
+                    <td className="p-2">{book.author}</td>
+                    <td className="p-2">{book.genre}</td>
+                    <td className="p-2">{book.yop}</td>
+                    <td className="p-2">{book.isbn}</td>
+                    <td className="p-2">
+                      <button onClick={() => editBook(index)} className="mr-2 text-blue-500">
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => deleteBook(index)} className="text-red-500">
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-
-
     </div>
   );
 };
