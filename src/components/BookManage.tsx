@@ -11,7 +11,6 @@ interface Book {
 
 
 
-
 const BookManagementApp: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
